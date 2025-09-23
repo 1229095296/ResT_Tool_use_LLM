@@ -1,0 +1,329 @@
+# ResT: Entropy-Aware Token-Level Reward Shaping for Tool-Use Alignment
+
+[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
+[![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/release/python-380/)
+
+## 🚀 Overview
+
+**ResT** (Reward Shaping with Token-level entropy) is a novel reinforcement learning framework that establishes a theoretical and empirical link between policy entropy and training stability for tool-use alignment. Built upon the [VERL](https://github.com/volcengine/verl) framework and inspired by [ToolRL](https://github.com/qiancheng0/ToolRL), our method introduces an entropy-aware, token-level reward shaping mechanism with curriculum learning to significantly improve the training stability and performance of language models on complex tool-calling tasks.
+
+### Key Features
+
+- **Entropy-Based Stability Analysis**: Demonstrates that lower average entropy correlates with reduced variance in policy-gradient updates
+- **Token-Level Reward Shaping**: Dynamically weights different token categories based on their semantic importance and entropy characteristics
+- **Curriculum Learning Integration**: Gradually increases reasoning token weights as training progresses and entropy decreases
+- **State-of-the-Art Performance**: Achieves up to 8.76% improvement over existing approaches and outperforms GPT-4o on tool-use benchmarks
+
+## 📊 Performance Highlights
+
+- **Multi-turn tool-use base tasks**: +1.50% over GPT-4o when fine-tuned on Qwen3-4B-2507
+- **Single-turn tool-use tasks**: +4.11% over GPT-4o 
+- **Curriculum vs. Static Weighting**: +4.86% improvement with our curriculum-based approach
+- **Overall Benchmark Improvement**: Up to 8.76% over existing state-of-the-art methods
+
+## 🏗️ Architecture
+
+Our ResT framework consists of three main components:
+
+1. **Entropy-Stability Analysis Module**: Establishes the theoretical foundation linking policy entropy to training stability
+2. **Token-Level Weight Assignment**: Core algorithm implemented in [`recipe/custom/token_weighting.py`](recipe/custom/token_weighting.py)
+3. **Curriculum Learning Scheduler**: Dynamically adjusts token weights during training progression
+
+### Token Weighting Algorithm
+
+The core implementation assigns weights to different token categories:
+
+- **Tool Names**: Moderate weight (γ_name = 1.2)
+- **Tool Arguments**: Highest weight (γ_args = 0.6 + 0.002 × step)  
+- **Format Tags**: Moderate weight (γ_format = 1.0)
+- **Reasoning Content**: Adaptive weight based on training step
+
+```python
+# Core weighting logic
+def build_token_weight(batch, tokenizer, gamma_name=1.2, gamma_args=0.6, ...):
+    """
+    Build token weights for reinforcement learning training.
+    
+    Assigns weights to tokens in <tool_call>/<toolcall> blocks:
+    - "name" field gets moderate weight
+    - "arguments"/"parameters" field gets highest weight  
+    - Format parts (think, response, tool_call tags) get moderate weight
+    - Other tokens get zero weight
+    """
+```
+
+## 🛠️ Installation
+
+### Prerequisites
+
+- Python 3.8+
+- CUDA 11.8+ (for GPU acceleration)
+- PyTorch 2.0+
+
+### Setup
+
+1. **Clone the repository**:
+```bash
+git clone https://github.com/volcengine/verl.git
+cd verl
+```
+
+2. **Install dependencies**:
+```bash
+# Install core dependencies
+pip install -r requirements.txt
+
+# Install the package
+pip install -e .
+```
+
+3. **Additional dependencies** (optional):
+```bash
+# For VLLM support (recommended for inference)
+pip install vllm==0.8.5
+
+# For development and testing
+pip install pytest pre-commit py-spy pytest-asyncio
+```
+
+4. **Verify installation**:
+```bash
+python -c "import verl; print('ResT installation successful!')"
+```
+
+## 🚀 Quick Start
+
+### Basic Training with ResT
+
+1. **Prepare your data** in the required format (see `data/rlla_4k/` for examples)
+
+2. **Configure training parameters**:
+```bash
+export EXPERIMENT_NAME="qwen3-1.7B"
+export SCHEDULEREWARD=1       # Enable dynamic reward scheduling
+export SCHEDULELENGTH=0       # Disable length-based scheduling
+export USE_THINKING_SEMANTIC=0  # Disable thinking semantic analysis
+export model_path="/path/to/huggingface.co/Qwen/Qwen3-1.7B"
+```
+
+3. **Launch ResT training**:
+```bash
+# Use the provided ResT training script
+bash train_ResT.sh
+```
+
+**Or run directly with custom parameters**:
+```bash
+PYTHONUNBUFFERED=1 python3 -m verl.trainer.main_grpo_rlla \
+    data.train_files="/path/to/data/rlla_4k/train.parquet" \
+    data.val_files="/path/to/data/rlla_4k/test.parquet" \
+    data.train_batch_size=512 \
+    data.val_batch_size=128 \
+    actor_rollout_ref.model.path=$model_path \
+    actor_rollout_ref.actor.loss_agg_mode=token-mean-weighted \
+    actor_rollout_ref.rollout.name=vllm \
+    actor_rollout_ref.rollout.tensor_model_parallel_size=8 \
+    algorithm.adv_estimator=grpo \
+    trainer.experiment_name='qwen3-1.7B' \
+    trainer.total_epochs=15
+```
+
+> **Important**: The key parameter `actor_rollout_ref.actor.loss_agg_mode=token-mean-weighted` enables ResT's token-level reward weighting mechanism.
+
+### Advanced Configuration
+
+#### Key Training Parameters
+
+The ResT training script includes several important environment variables for controlling the algorithm behavior:
+
+```bash
+export SCHEDULEREWARD=1       # Enable curriculum reward scheduling
+export SCHEDULELENGTH=0       # Disable length-based scheduling
+export USE_THINKING_SEMANTIC=0  # Disable thinking semantic analysis
+export WITHLENGTH=0          # Disable length penalty
+export REFINEDREWARD=0       # Use standard reward computation
+```
+
+#### Token Weighting Configuration
+
+For fine-grained control over the token weighting mechanism, modify the parameters in [`recipe/custom/token_weighting.py`](recipe/custom/token_weighting.py):
+
+```python
+# Adaptive weight parameters
+gamma_name = 1.2          # Tool name weight multiplier
+gamma_args = 0.6          # Base tool arguments weight
+step_weight_increase = 0.002  # Curriculum learning rate
+max_gamma_args = 1.2      # Maximum arguments weight
+```
+
+#### Multi-GPU Configuration
+
+For large-scale training, configure distributed settings:
+
+```bash
+# Multi-GPU setup in train_ResT.sh
+trainer.n_gpus_per_node=8        # GPUs per node
+trainer.nnodes=1                 # Number of nodes
+actor_rollout_ref.rollout.tensor_model_parallel_size=8  # Model parallelism
+actor_rollout_ref.rollout.gpu_memory_utilization=0.5   # GPU memory usage
+```
+
+## 📁 Project Structure
+
+```
+verl/
+├── recipe/custom/
+│   └── token_weighting.py         # Core ResT algorithm implementation
+├── verl/
+│   ├── trainer/
+│   │   ├── main_ppo.py            # PPO trainer with ResT integration
+│   │   └── main_grpo_rlla.py      # GRPO trainer for tool-use tasks
+│   ├── workers/
+│   │   └── reward_manager/
+│   │       └── abstract.py        # Reward computation framework
+│   └── utils/
+│       ├── torch_functional.py    # Weighted loss functions
+│       └── reward_score/
+│           └── rlla.py            # Tool-use specific scoring
+├── train_ResT.sh                  # Main ResT training script
+├── train_ppo.sh                   # PPO training script
+├── train_llama.sh                 # Llama model training script
+├── requirements.txt               # Core dependencies
+└── API-Bank/                      # Evaluation benchmarks
+    ├── generate.py                # Model inference
+    └── evaluate.py                # Performance evaluation
+```
+
+## 🎯 Training Examples
+
+### Example 1: Qwen3-1.7B with ResT (Recommended)
+```bash
+# Main ResT training with GRPO
+bash train_ResT.sh
+```
+
+### Example 2: Alternative PPO Training
+```bash
+bash train_ppo.sh
+```
+
+### Example 3: Llama3-3B with GRPO + ResT
+```bash
+bash train_llama.sh
+```
+
+### Example 4: Custom Multi-GPU Training
+```bash
+export EXPERIMENT_NAME="custom-rest-experiment"
+export SCHEDULEREWARD=1
+export model_path="/path/to/your/model"
+
+PYTHONUNBUFFERED=1 python3 -m verl.trainer.main_grpo_rlla \
+    data.train_files="/path/to/train.parquet" \
+    data.val_files="/path/to/val.parquet" \
+    actor_rollout_ref.model.path=$model_path \
+    actor_rollout_ref.actor.loss_agg_mode=token-mean-weighted \
+    actor_rollout_ref.rollout.tensor_model_parallel_size=8 \
+    trainer.n_gpus_per_node=8 \
+    trainer.experiment_name=$EXPERIMENT_NAME
+```
+
+## 📈 Evaluation
+
+### API-Bank Benchmark
+
+Evaluate your trained model on the API-Bank benchmark:
+
+```bash
+cd API-Bank
+python generate.py --model_paths /path/to/your/trained/model
+python evaluate.py --model_paths /path/to/your/trained/model
+```
+
+### Custom Evaluation
+
+The framework supports custom evaluation metrics through the reward manager system. See [`verl/workers/reward_manager/abstract.py`](verl/workers/reward_manager/abstract.py) for implementation details.
+
+## 🔬 Technical Details
+
+### Theoretical Foundation
+
+Our approach is grounded in the observation that:
+
+1. **Entropy-Stability Correlation**: Lower average entropy in policy distributions correlates with reduced variance in policy-gradient updates
+2. **Structured Token Importance**: Tool names and parameters (low-entropy, structured tokens) are primary determinants of reward outcomes
+3. **Curriculum Learning Benefits**: Gradual increase in reasoning token weights leads to more stable convergence
+
+### Implementation Highlights
+
+- **Dynamic Weight Adjustment**: Token weights adapt based on training step and content characteristics
+- **Multi-Region Processing**: Separate handling for `<think>`, `<response>`, and `<tool_call>` regions
+- **Normalization Strategy**: Ensures mean weight equals 1 across valid positions for training stability
+
+## 🤝 Contributing
+
+We welcome contributions! Please see our [Contributing Guidelines](CONTRIBUTING.md) for details.
+
+### Development Setup
+
+```bash
+# Install all dependencies including development tools
+pip install -r requirements.txt
+pip install -e .
+
+# Setup pre-commit hooks for code formatting
+pre-commit install
+pre-commit run --all-files
+
+# Run tests (if available)
+pytest tests/
+```
+
+## 📝 Citation
+
+If you use ResT in your research, please cite our paper:
+
+```bibtex
+@article{rest2024,
+  title={ResT: Entropy-Aware Token-Level Reward Shaping for Tool-Use Alignment},
+  author={[Your Authors]},
+  journal={[Journal/Conference]},
+  year={2024}
+}
+```
+
+Please also consider citing the foundational works that ResT builds upon:
+
+```bibtex
+@article{sheng2024hybridflow,
+  title={HybridFlow: A Flexible and Efficient RLHF Framework},
+  author={Guangming Sheng and Chi Zhang and Zilingfeng Ye and Xibin Wu and Wang Zhang and Ru Zhang and Yanghua Peng and Haibin Lin and Chuan Wu},
+  year={2024},
+  journal={arXiv preprint arXiv: 2409.19256}
+}
+
+@misc{toolrl2024,
+  title={ToolRL: Tool-use Reinforcement Learning Framework},
+  author={Qian Cheng and others},
+  year={2024},
+  howpublished={\url{https://github.com/qiancheng0/ToolRL}}
+}
+```
+
+## 📄 License
+
+This project is licensed under the Apache License 2.0 - see the [LICENSE](LICENSE) file for details.
+
+## 🙏 Acknowledgments
+
+This work is built upon and extends the following open-source projects:
+
+- **[VERL](https://github.com/volcengine/verl)** (Volcano Engine Reinforcement Learning) - The core reinforcement learning framework by Bytedance that provides the foundational infrastructure for distributed RLHF training
+- **[ToolRL](https://github.com/qiancheng0/ToolRL)** - The tool-use reinforcement learning framework that inspired our approach to tool-calling scenarios
+
+We are grateful to the open-source community and the contributors of these projects for their invaluable work that made ResT possible.
+
+
+---
+
+**ResT** - Revolutionizing Tool-Use Alignment with Entropy-Aware Reward Shaping 🎯
