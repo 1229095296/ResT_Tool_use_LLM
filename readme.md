@@ -101,8 +101,6 @@ python -c "import verl; print('ResT installation successful!')"
 ```bash
 export EXPERIMENT_NAME="qwen3-1.7B"
 export SCHEDULEREWARD=1       # Enable dynamic reward scheduling
-export SCHEDULELENGTH=0       # Disable length-based scheduling
-export USE_THINKING_SEMANTIC=0  # Disable thinking semantic analysis
 export model_path="/path/to/huggingface.co/Qwen/Qwen3-1.7B"
 ```
 
@@ -137,7 +135,7 @@ PYTHONUNBUFFERED=1 python3 -m verl.trainer.main_grpo_rlla \
 The ResT training script includes several important environment variables for controlling the algorithm behavior:
 
 ```bash
-export SCHEDULEREWARD=1       # Enable curriculum reward scheduling
+export SCHEDULEREWARD=1       # Enable dynamic reward scheduling
 ```
 
 #### Token Weighting Configuration
