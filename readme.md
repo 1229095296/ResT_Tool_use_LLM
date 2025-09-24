@@ -195,9 +195,9 @@ python generate.py --model_paths /path/to/your/trained/model
 python evaluate.py --model_paths /path/to/your/trained/model
 ```
 
-### Custom Evaluation
+### BFCL V3 Benchmark
 
-The framework supports custom evaluation metrics through the reward manager system. See [`verl/workers/reward_manager/abstract.py`](verl/workers/reward_manager/abstract.py) for implementation details.
+For implementation, please refer to the official BFCL code.
 
 ## 🔬 Technical Details
 
@@ -215,36 +215,15 @@ Our approach is grounded in the observation that:
 - **Multi-Region Processing**: Separate handling for `<think>`, `<response>`, and `<tool_call>` regions
 - **Normalization Strategy**: Ensures mean weight equals 1 across valid positions for training stability
 
-## 🤝 Contributing
 
-We welcome contributions! Please see our [Contributing Guidelines](CONTRIBUTING.md) for details.
-
-### Development Setup
-
-```bash
-# Install all dependencies including development tools
-pip install -r requirements.txt
-pip install -e .
-
-# Setup pre-commit hooks for code formatting
-pre-commit install
-pre-commit run --all-files
-
-# Run tests (if available)
-pytest tests/
 ```
-
-
-## 📄 License
-
-This project is licensed under the Apache License 2.0 - see the [LICENSE](LICENSE) file for details.
 
 ## 🙏 Acknowledgments
 
 This work is built upon and extends the following open-source projects:
 
-- **[VERL](https://github.com/volcengine/verl)** (Volcano Engine Reinforcement Learning) - The core reinforcement learning framework by Bytedance that provides the foundational infrastructure for distributed RLHF training
-- **[ToolRL](https://github.com/qiancheng0/ToolRL)** - The tool-use reinforcement learning framework that inspired our approach to tool-calling scenarios
+- **[VERL]** (Volcano Engine Reinforcement Learning) - The core reinforcement learning framework by Bytedance that provides the foundational infrastructure for distributed RLHF training
+- **[ToolRL]** - The tool-use reinforcement learning framework that inspired our approach to tool-calling scenarios
 
 We are grateful to the open-source community and the contributors of these projects for their invaluable work that made ResT possible.
 
