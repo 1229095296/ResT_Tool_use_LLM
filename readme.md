@@ -153,8 +153,7 @@ REST/
 │   └── token_weighting.py         # Core ResT algorithm implementation
 ├── verl/
 │   ├── trainer/
-│   │   ├── main_ppo.py            # PPO trainer with ResT integration
-│   │   └── main_grpo_rlla.py      # GRPO trainer for tool-use tasks
+│   │   └── main_grpo_rlla.py      # ResT trainer for tool-use tasks
 │   ├── workers/
 │   │   └── reward_manager/
 │   │       └── abstract.py        # Reward computation framework
@@ -163,8 +162,6 @@ REST/
 │       └── reward_score/
 │           └── rlla.py            # Tool-use specific scoring
 ├── train_ResT.sh                  # Main ResT training script
-├── train_ppo.sh                   # PPO training script
-├── train_llama.sh                 # Llama model training script
 ├── requirements.txt               # Core dependencies
 └── API-Bank/                      # Evaluation benchmarks
     ├── generate.py                # Model inference
