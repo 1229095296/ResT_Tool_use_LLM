@@ -1,11 +1,8 @@
 # ResT: Reshaping Token-Level Policy Gradients for Tool-Use Large Language Models
 
-[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
-[![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/release/python-380/)
-
 ## 🚀 Overview
 
-**ResT** (Reward Shaping with Token-level entropy) is a novel reinforcement learning framework that establishes a theoretical and empirical link between policy entropy and training stability for tool-use alignment. Built upon the [VERL](https://github.com/volcengine/verl) framework and inspired by [ToolRL](https://github.com/qiancheng0/ToolRL), our method introduces an entropy-aware, token-level reward shaping mechanism with curriculum learning to significantly improve the training stability and performance of language models on complex tool-calling tasks.
+**ResT** (Reward Shaping with Token-level entropy) is a novel reinforcement learning framework that establishes a theoretical and empirical link between policy entropy and training stability for tool-use alignment. Built upon the [VERL] framework and inspired by [ToolRL], our method introduces an entropy-aware, token-level reward shaping mechanism with curriculum learning to significantly improve the training stability and performance of language models on complex tool-calling tasks.
 
 ### Key Features
 
