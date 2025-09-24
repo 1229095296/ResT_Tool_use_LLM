@@ -65,7 +65,7 @@ def build_token_weight(batch, tokenizer, gamma_name=1.2, gamma_args=0.6, ...):
 1. **Clone the repository**:
 ```bash
 git clone https://github.com/1229095296/ResT_Tool_use_LLM.git
-cd verl
+
 ```
 
 2. **Install dependencies**:
@@ -82,13 +82,6 @@ pip install -e .
 # For VLLM support (recommended for inference)
 pip install vllm==0.8.5
 
-# For development and testing
-pip install pytest pre-commit py-spy pytest-asyncio
-```
-
-4. **Verify installation**:
-```bash
-python -c "import verl; print('ResT installation successful!')"
 ```
 
 ## 🚀 Quick Start
