@@ -23,7 +23,7 @@
 Our ResT framework consists of three main components:
 
 1. **Entropy-Stability Analysis Module**: Establishes the theoretical foundation linking policy entropy to training stability
-2. **Token-Level Weight Assignment**: Core algorithm implemented in [`recipe/custom/token_weighting.py`](recipe/custom/token_weighting.py)
+2. **Token-Level Weight Assignment**: Main Core algorithm
 3. **Curriculum Learning Scheduler**: Dynamically adjusts token weights during training progression
 
 ### Token Weighting Algorithm
@@ -35,19 +35,6 @@ The core implementation assigns weights to different token categories:
 - **Format Tags**: Moderate weight (γ_format)
 - **Reasoning Content**: Adaptive weight based on training step (γ_think)
 
-```python
-# Core weighting logic
-def build_token_weight(batch, tokenizer, gamma_name=1.2, gamma_args=0.6, ...):
-    """
-    Build token weights for reinforcement learning training.
-    
-    Assigns weights to tokens in <tool_call>/<toolcall> blocks:
-    - "name" field gets moderate weight
-    - "arguments"/"parameters" field gets highest weight  
-    - Format parts (think, response, tool_call tags) get moderate weight
-    - Other tokens get zero weight
-    """
-```
 
 ## 🛠️ Installation
 
@@ -100,23 +87,6 @@ export model_path="/path/to/huggingface.co/Qwen/Qwen3-1.7B"
 bash train_ResT.sh
 ```
 
-**Or run directly with custom parameters**:
-```bash
-PYTHONUNBUFFERED=1 python3 -m verl.trainer.main_grpo_rlla \
-    data.train_files="/path/to/data/rlla_4k/train.parquet" \
-    data.val_files="/path/to/data/rlla_4k/test.parquet" \
-    data.train_batch_size=512 \
-    data.val_batch_size=128 \
-    actor_rollout_ref.model.path=$model_path \
-    actor_rollout_ref.actor.loss_agg_mode=token-mean-weighted \
-    actor_rollout_ref.rollout.name=vllm \
-    actor_rollout_ref.rollout.tensor_model_parallel_size=8 \
-    algorithm.adv_estimator=grpo \
-    trainer.experiment_name='qwen3-1.7B' \
-    trainer.total_epochs=15
-```
-
-> **Important**: The key parameter `actor_rollout_ref.actor.loss_agg_mode=token-mean-weighted` enables ResT's token-level reward weighting mechanism.
 
 ### Advanced Configuration
 
@@ -127,10 +97,6 @@ The ResT training script includes several important environment variables for co
 ```bash
 export SCHEDULEREWARD=1       # Enable dynamic reward scheduling
 ```
-
-#### Token Weighting Configuration
-
-For fine-grained control over the token weighting mechanism, modify the parameters in [`recipe/custom/token_weighting.py`](recipe/custom/token_weighting.py):
 
 
 #### Multi-GPU Configuration
@@ -145,28 +111,6 @@ actor_rollout_ref.rollout.tensor_model_parallel_size=8  # Model parallelism
 actor_rollout_ref.rollout.gpu_memory_utilization=0.5   # GPU memory usage
 ```
 
-## 📁 Project Structure
-
-```
-REST/
-├── recipe/custom/
-│   └── token_weighting.py         # Core ResT algorithm implementation
-├── verl/
-│   ├── trainer/
-│   │   └── main_grpo_rlla.py      # ResT trainer for tool-use tasks
-│   ├── workers/
-│   │   └── reward_manager/
-│   │       └── abstract.py        # Reward computation framework
-│   └── utils/
-│       ├── torch_functional.py    # Weighted loss functions
-│       └── reward_score/
-│           └── rlla.py            # Tool-use specific scoring
-├── train_ResT.sh                  # Main ResT training script
-├── requirements.txt               # Core dependencies
-└── API-Bank/                      # Evaluation benchmarks
-    ├── generate.py                # Model inference
-    └── evaluate.py                # Performance evaluation
-```
 
 ## 🎯 Training Examples
 
@@ -208,18 +152,6 @@ Our approach is grounded in the observation that:
 - **Dynamic Weight Adjustment**: Token weights adapt based on training step and content characteristics
 - **Multi-Region Processing**: Separate handling for `<think>`, `<response>`, and `<tool_call>` regions
 - **Normalization Strategy**: Ensures mean weight equals 1 across valid positions for training stability
-
-
-```
-
-## 🙏 Acknowledgments
-
-This work is built upon and extends the following open-source projects:
-
-- **[VERL]** (Volcano Engine Reinforcement Learning) - The core reinforcement learning framework by Bytedance that provides the foundational infrastructure for distributed RLHF training
-- **[ToolRL]** - The tool-use reinforcement learning framework that inspired our approach to tool-calling scenarios
-
-We are grateful to the open-source community and the contributors of these projects for their invaluable work that made ResT possible.
 
 
 ---
