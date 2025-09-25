@@ -715,10 +715,6 @@ def agg_loss(loss_mat: torch.Tensor, loss_mask: torch.Tensor, loss_agg_mode: str
         loss: `a scalar torch.Tensor`
             aggregated loss
     """
-        # New: Weight priority (only when token_weight is provided and weighted mode is selected)
-    if loss_agg_mode == "token-mean-weighted":
-        assert token_weight is not None, "token-mean-weighted requires token_weight"
-        return verl_F.weighted_masked_mean(loss_mat, loss_mask, token_weight)
     
     if loss_agg_mode == "token-mean":
         loss = verl_F.masked_mean(loss_mat, loss_mask)
@@ -736,6 +732,9 @@ def agg_loss(loss_mat: torch.Tensor, loss_mask: torch.Tensor, loss_agg_mode: str
         # throughout training to well-replicate the DrGRPO paper.
         # TODO: Perhaps add user-defined normalizer argument to
         # agg_loss to ensure divisor stays constant throughout.
+    elif loss_agg_mode == "token-mean-weighted":
+        assert token_weight is not None, "token-mean-weighted requires token_weight"
+        return verl_F.weighted_masked_mean(loss_mat, loss_mask, token_weight)
     else:
         raise ValueError(f"Invalid loss_agg_mode: {loss_agg_mode}")
 
