@@ -26,6 +26,7 @@ PYTHONUNBUFFERED=1 python3 -m verl.trainer.main_grpo_rlla \
  actor_rollout_ref.actor.kl_loss_type=low_var_kl \
  actor_rollout_ref.model.enable_gradient_checkpointing=True \
  actor_rollout_ref.rollout.name=vllm \
+ actor_rollout_ref.actor.loss_agg_mode=token-mean-weighted \
  actor_rollout_ref.rollout.tensor_model_parallel_size=8 \
  actor_rollout_ref.rollout.gpu_memory_utilization=0.5 \
  actor_rollout_ref.rollout.n=4 \
